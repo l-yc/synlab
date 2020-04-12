@@ -1,0 +1,38 @@
+html, body { 
+    margin: 0;
+    height: 100%;
+    display: flex;
+}
+
+.app {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#canvas {
+    border: solid 2px black;
+    flex: 1;
+}
+
+#canvas .atom:hover {
+    filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
+    cursor: pointer;
+}
+
+.toolbar {
+    background-color: grey;
+}
+
+.toolbar .button {
+    border: solid 2px red;
+}
+
+.toolbar .button:hover {
+    background-color: black;
+    color: white;
+    cursor: pointer;
+}
+
+.toolbar .button.selected {
+    background-color: green;
+}
