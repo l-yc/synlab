@@ -1,3 +1,4 @@
+/* General Helper Functions */
 function docReady(fn) {
     // see if DOM is already available
     if (document.readyState === "complete" || document.readyState === "interactive") {
@@ -7,6 +8,47 @@ function docReady(fn) {
         document.addEventListener("DOMContentLoaded", fn);
     }
 }
+
+/* Data Representation */
+class Atom {
+    constructor(id, label) {
+        this.id = id;
+        this.label = label;
+    }
+};
+
+class Molecule {
+    // TODO: Add a constructor for InChI string
+    constructor() {
+        this.atomCount = 0;
+        this.atoms = [];
+        this.adjacencyList = [];
+    }
+
+    addAtom(label) {
+        let newAtom = new Atom(this.atomCount++, label);
+        this.atoms.push(newAtom);
+        this.adjacencyList.push([]);
+        return newAtom;
+    }
+
+    addBond(atomId1, atomId2) {
+        this.adjacencyList[atomId1].push(atomId2);
+        this.adjacencyList[atomId2].push(atomId1);
+    }
+
+    getAtom(id) {
+        return this.atoms[id];
+    }
+
+    getAtomNeighbors(id) {
+        return this.adjacencyList[id];
+    }
+};
+
+let molecule = new Molecule();  // TODO: for now, we assume only 1 molecule
+
+/* Drawing Tool */
 
 let canvas = null;
 let toolbar = null;
@@ -27,36 +69,6 @@ function renderedTextSize(string, font, fontSize) {
     }
 }
 
-function trash() {
-    var color = "hsb(" + [(1 - R / max) * .5, 1, .75] + ")",
-        dt = r.circle(dx + 60 + R, dy + 10, R).attr({stroke: "none", fill: color});
-    if (R < 6) {
-        var bg = r.circle(dx + 60 + R, dy + 10, 6).attr({stroke: "none", fill: "#000", opacity: .4}).hide();
-    }
-    var lbl = r.text(dx + 60 + R, dy + 10, data[o])
-        .attr({"font": '10px "Helvetica Neue", Arial', stroke: "none", fill: "#fff"}).hide();
-    var dot = r.circle(dx + 60 + R, dy + 10, max).attr({stroke: "none", fill: "#000", opacity: 0});
-    dot.hover(function () {
-        if (bg) {
-            bg.show();
-        } else {
-            var clr = Raphael.rgb2hsb(color);
-            clr.b = .5;
-            dt.attr("fill", Raphael.hsb2rgb(clr).hex);
-        }
-        lbl.show();
-    }, function () {
-        if (bg) {
-            bg.hide();
-        } else {
-            dt.attr("fill", color);
-        }
-        lbl.hide();
-    });
-}
-
-console.clear();
-
 function makeAtom(text, pos) {
     console.log('making atom ' + text + ' at ' + JSON.stringify(pos));
     const R = 20;
@@ -64,8 +76,11 @@ function makeAtom(text, pos) {
     let dot = paper.circle(pos.x, pos.y, R)
         .attr({ stroke: 'none', fill: '#dd7', opacity: .4 });
     let lbl = paper.text(pos.x, pos.y , text)
-        .attr({'font': '14px "Helvetica Neue", Arial', stroke: '#000', fill: 'none'});
-    var atom = paper.set(dot, lbl);
+        .attr({ font: '14px "Helvetica Neue", Arial', stroke: '#000', fill: 'none'});
+    let atom = paper.set(dot, lbl);
+
+    let atomD = molecule.addAtom(text, atom);
+    //atom.attr({ 'data-atom-id': atomId });
 
     atom.hover(event => {
         dot.attr({ fill: '#dd7' });
@@ -74,11 +89,24 @@ function makeAtom(text, pos) {
     });
 
     atom.click(event => {
-        makeBond(pos, event.ctrlKey ? 1 : 3);
+        if (event.shiftKey) {
+            if (toolbar.active === null || toolbar.active.dataset.type !== 'atom') alert('no change'); // TODO: add a visual bell
+            lbl.attr({ text: toolbar.active.dataset.value });
+            if (lbl.attr('text') !== 'C') lbl.show();   // always show non-carbon atoms
+        } else {
+            makeBond(atomD, pos, (event.ctrlKey ? 1 : 3));
+            if (lbl.attr('text') === 'C') {
+                let deg = molecule.getAtomNeighbors(atomD.id).length;
+                console.log(deg);
+                if (deg >= 2) lbl.hide();   // hide only if it is an internal atom
+            }
+        }
     });
+
+    return atomD;
 }
 
-function makeBond(pos, dirn) {
+function makeBond(atom, pos, dirn) {
     const len = 40;
     let theta, dy, dx;
     if (dirn == 1) {
@@ -101,7 +129,8 @@ function makeBond(pos, dirn) {
         'y': pos.y,
     });
 
-    makeAtom('C', { x: pos.x + parseFloat(dx), y: pos.y + parseFloat(dy) });
+    let atom2 = makeAtom('C', { x: pos.x + parseFloat(dx), y: pos.y + parseFloat(dy) });
+    molecule.addBond(atom.id, atom2.id);
 }
 
 function initCanvas() {
@@ -146,6 +175,7 @@ function initToolbar() {
 }
 
 docReady(function() {
+    console.clear();    // DEBUG
     initCanvas();
     initToolbar();
 });
