@@ -10,10 +10,51 @@ function docReady(fn) {
 }
 
 /* Data Representation */
+class Bond {
+    constructor(to, type) {
+        this.to = to;
+        this.type = type;   // 1, 2, 3 for single, double and triple
+    }
+}
+
+let valence = {  // Temporary abstraction
+    'C': 4
+};
 class Atom {
+    /**
+     * Convention for tetrahedral atoms: neighbors are numbered using R relative to 0
+     */
+
     constructor(id, label) {
         this.id = id;
         this.label = label;
+
+        this.degree = 0;
+        this.bonded = new Array(valence[label]).fill(null);   // IDs of atoms it is bonded to
+    }
+
+    getDegree() {
+        return this.degree;
+    }
+
+    /**
+     * pos:     position to check
+     */
+    hasBond(pos) {
+        return this.bonded[pos] !== null;
+    }
+
+    /**
+     * id:      id of the other atom
+     * pos:     position to add to
+     */
+    addBond(id, pos) {
+        if (this.bonded[pos] === null) {
+            this.bonded[pos] = new Bond(id, 1);
+            this.degree += 1;
+        } else {
+            console.error('Already occupied!');   // TODO: more robust error handling
+        }
     }
 };
 
@@ -22,27 +63,21 @@ class Molecule {
     constructor() {
         this.atomCount = 0;
         this.atoms = [];
-        this.adjacencyList = [];
     }
 
     addAtom(label) {
         let newAtom = new Atom(this.atomCount++, label);
         this.atoms.push(newAtom);
-        this.adjacencyList.push([]);
         return newAtom;
     }
 
-    addBond(atomId1, atomId2) {
-        this.adjacencyList[atomId1].push(atomId2);
-        this.adjacencyList[atomId2].push(atomId1);
+    addBond(atomId1, atomId2, pos1, pos2) {
+        this.atoms[atomId1].addBond(atomId2, pos1);
+        this.atoms[atomId2].addBond(atomId1, pos2);
     }
 
     getAtom(id) {
         return this.atoms[id];
-    }
-
-    getAtomNeighbors(id) {
-        return this.adjacencyList[id];
     }
 };
 
@@ -81,9 +116,15 @@ function makeAtom(text, pos) {
             lbl.text(toolbar.active.dataset.value);
             if (lbl.attr('text') !== 'C') lbl.show();   // always show non-carbon atoms
         } else {
-            makeBond(atomD, pos, (event.ctrlKey ? 1 : 3));
+            console.log(atomD);
+            if (!atomD.hasBond(1)) {
+                makeBond(atomD, pos, (event.ctrlKey ? 0 : 2));
+            } else {
+                console.error('Bond already exists');
+            }
+
             if (lbl.text() === 'C') {
-                let deg = molecule.getAtomNeighbors(atomD.id).length;
+                let deg = molecule.getAtom(atomD.id).degree;
                 console.log(deg);
                 if (deg >= 2) lbl.hide();   // hide only if it is an internal atom
             }
@@ -93,17 +134,32 @@ function makeAtom(text, pos) {
     return atomD;
 }
 
+/**
+ * dirn:    integer from 0 to 2.
+ *          / -> 0
+ *          | -> 1
+ *          \ -> 2
+ *
+ */
 function makeBond(atom, pos, dirn) {
     const len = 40;
-    let theta, dy, dx;
-    if (dirn == 1) {
-        theta = Math.PI/6.0;
-        dy = -(len * Math.sin(theta)).toFixed(2);
-        dx = (len * Math.cos(theta)).toFixed(2);
-    } else if (dirn == 3) {
-        theta = Math.PI/6.0;
-        dy = (len * Math.sin(theta)).toFixed(2);
-        dx = (len * Math.cos(theta)).toFixed(2);
+    let theta, dy, dx;  // theta follows standard trigonometry conventions
+    switch (dirn) {
+        case 0:
+            theta = Math.PI/6.0;
+            dy = -(len * Math.sin(theta)).toFixed(2);
+            dx = (len * Math.cos(theta)).toFixed(2);
+            break;
+        case 1:
+            theta = Math.PI/2.0;
+            dy = -len;
+            dx = 0;
+            break;
+        case 2:
+            theta = Math.PI/6.0;
+            dy = (len * Math.sin(theta)).toFixed(2);
+            dx = (len * Math.cos(theta)).toFixed(2);
+            break;
     }
     
     let bond = canvas.path(
@@ -117,7 +173,7 @@ function makeBond(atom, pos, dirn) {
     });
 
     let atom2 = makeAtom('C', { x: pos.x + parseFloat(dx), y: pos.y + parseFloat(dy) });
-    molecule.addBond(atom.id, atom2.id);
+    molecule.addBond(atom.id, atom2.id, 1, 0);
 }
 
 function initCanvas() {
@@ -130,16 +186,8 @@ function initCanvas() {
 
         if (event.target === canvas.node) {
             let pos = { x: event.offsetX, y: event.offsetY };
-            //let atom = makeAtom(toolbar.active.dataset.value, pos);
-            //canvas.appendChild(atom);
             makeAtom(toolbar.active.dataset.value, pos);
-        } else {
-            //var rect = event.target.getBoundingClientRect();
-            //console.log(rect);
-            //let pos = { x: rect.x, y: rect.y };
-            //let bond = makeBond(pos);
-            //canvas.appendChild(bond);
-        }
+        } // leave the rest to child handlers
     });
 }
 
