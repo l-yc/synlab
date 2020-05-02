@@ -55,37 +55,24 @@ let toolbar = null;
 
 const svgNS = 'http://www.w3.org/2000/svg';
 
-function renderedTextSize(string, font, fontSize) {
-    var paper = Raphael(0, 0, 0, 0)
-    paper.canvas.style.visibility = 'hidden'
-    var el = paper.text(0, 0, string)
-    el.attr('font-family', font)
-    el.attr('font-size', fontSize)
-    var bBox = el.getBBox()
-    paper.remove()
-    return {
-        width: bBox.width,
-        height: bBox.height
-    }
-}
-
 function makeAtom(text, pos) {
     console.log('making atom ' + text + ' at ' + JSON.stringify(pos));
     const R = 20;
 
-    let dot = paper.circle(pos.x, pos.y, R)
-        .attr({ stroke: 'none', fill: '#dd7', opacity: .4 });
-    let lbl = paper.text(pos.x, pos.y , text)
-        .attr({ font: '14px "Helvetica Neue", Arial', stroke: '#000', fill: 'none'});
-    let atom = paper.set(dot, lbl);
+    let atom = canvas.group();
+    let dot = atom.circle().radius(R).center(pos.x, pos.y)
+        .attr({ stroke: 'none', fill: '#dd7', opacity: .0 });
+    let lbl = atom.text(text).center(pos.x, pos.y)
+        .attr({ font: '14px "Helvetica Neue", Arial', stroke: '#000' });
 
     let atomD = molecule.addAtom(text, atom);
     //atom.attr({ 'data-atom-id': atomId });
 
-    atom.hover(event => {
-        dot.attr({ fill: '#dd7' });
-    }, event => {
-        dot.attr({ fill: '#fff' });
+    atom.on('mouseenter', event => {
+        dot.attr({ opacity: .4 });
+    });
+    atom.on('mouseleave', event => {
+        dot.attr({ opacity: .0 });
     });
 
     atom.click(event => {
@@ -119,7 +106,7 @@ function makeBond(atom, pos, dirn) {
         dx = (len * Math.cos(theta)).toFixed(2);
     }
     
-    let bond = paper.path(
+    let bond = canvas.path(
         `M ${pos.x} ${pos.y} l ${dx} ${dy}`
     ).attr({
         'stroke-width': 2,
@@ -134,14 +121,14 @@ function makeBond(atom, pos, dirn) {
 }
 
 function initCanvas() {
-    canvas = document.querySelector('#canvas');
-    paper = Raphael(canvas, 0, 0);
+    canvas = SVG().addTo('#canvas').size('100%', '100%');
+    console.log(canvas);
 
-    canvas.addEventListener('click', event => {
+    canvas.click(event => {
         if (toolbar.active === null) return;
         console.log(event);
 
-        if (event.target === canvas.querySelector('svg')) {
+        if (event.target === canvas.node) {
             let pos = { x: event.offsetX, y: event.offsetY };
             //let atom = makeAtom(toolbar.active.dataset.value, pos);
             //canvas.appendChild(atom);
@@ -153,8 +140,7 @@ function initCanvas() {
             //let bond = makeBond(pos);
             //canvas.appendChild(bond);
         }
-
-    }, false);
+    });
 }
 
 function initToolbar() {

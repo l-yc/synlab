@@ -23,6 +23,9 @@ Icons from [Feather](https://feathericons.com/)
 - [ ] Displays
     - [ ] Displayed structural formula
     - [ ] Skeletal structure
+- [ ] Codebase
+    - [x] Migrate to SVG.js
+    - [ ] Refactoring
 - [ ] Documentation
     - [ ] Feature guide
     - [ ] Keyboard shortcuts
