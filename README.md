@@ -11,10 +11,12 @@ Icons from [Feather](https://feathericons.com/)
 - [ ] Atom management
     - [x] Click canvas to create
     - [x] Replace atom (shift + click)
+        - [ ] Update internal data representation
 - [ ] Bond creation
     - [x] Click atom to draw
     - [x] Auto hide internal C atoms
     - [ ] Simple bond angle selection (click for \, ctrl + click for /)
+        - [ ] Bond guide layouts for normal skeletal structures
     - [ ] Smart bond angle selection
 - [ ] Internal Molecular Representation
 -   - [ ] [InChI](https://iupac.org/who-we-are/divisions/division-details/inchi/)
