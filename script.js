@@ -78,11 +78,11 @@ function makeAtom(text, pos) {
     atom.click(event => {
         if (event.shiftKey) {
             if (toolbar.active === null || toolbar.active.dataset.type !== 'atom') alert('no change'); // TODO: add a visual bell
-            lbl.attr({ text: toolbar.active.dataset.value });
+            lbl.text(toolbar.active.dataset.value);
             if (lbl.attr('text') !== 'C') lbl.show();   // always show non-carbon atoms
         } else {
             makeBond(atomD, pos, (event.ctrlKey ? 1 : 3));
-            if (lbl.attr('text') === 'C') {
+            if (lbl.text() === 'C') {
                 let deg = molecule.getAtomNeighbors(atomD.id).length;
                 console.log(deg);
                 if (deg >= 2) lbl.hide();   // hide only if it is an internal atom
